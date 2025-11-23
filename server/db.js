@@ -11,7 +11,8 @@ let initDB;
 
 if (dbType === 'postgres') {
   // ---------------- PostgreSQL Setup ----------------
-  const { Pool } = (await import('pg')).default;
+  const pg = await import('pg');
+  const { Pool } = pg;
 
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -121,8 +122,8 @@ if (dbType === 'postgres') {
 } else {
   // ---------------- SQLite Setup ----------------
   const sqlite3 = (await import('sqlite3')).default;
-  import path from 'path';
-  import { fileURLToPath } from 'url';
+  const path = await import('path');
+  const { fileURLToPath } = await import('url');
 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
