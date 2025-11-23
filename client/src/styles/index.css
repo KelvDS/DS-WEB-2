@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .btn-primary {
+    @apply bg-gold text-gray-900 px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-blue text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-all duration-200;
+  }
+
+  .btn-outline {
+    @apply border-2 border-gold text-gold px-6 py-3 rounded-lg font-semibold hover:bg-gold hover:text-gray-900 transition-all duration-200;
+  }
+
+  .input-field {
+    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-colors;
+  }
+
+  .card {
+    @apply bg-gray-800 border border-gray-700 rounded-lg p-6 shadow-lg;
+  }
+
+  .section-title {
+    @apply text-4xl md:text-5xl font-bold text-center mb-4;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-gold to-blue bg-clip-text text-transparent;
+  }
+}

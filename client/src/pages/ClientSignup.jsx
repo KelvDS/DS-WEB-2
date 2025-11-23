@@ -1,0 +1,77 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { signup, setAuth } from '../api';
+
+export default function ClientSignup() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await signup(email, password);
+      setAuth(data.token, data.user);
+      navigate('/gallery');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center py-12 px-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold gradient-text mb-2">Create Account</h1>
+          <p className="text-gray-400">Sign up to access your photos</p>
+        </div>
+
+        <div className="card">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && <div className="bg-red-500 bg-opacity-10 border border-red-500 text-red-500 px-4 py-3 rounded">{error}</div>}
+            
+            <div>
+              <label className="block text-sm font-semibold mb-2">Email</label>
+              <input type="email" className="input-field" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">Password</label>
+              <input type="password" className="input-field" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">Confirm Password</label>
+              <input type="password" className="input-field" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            </div>
+
+            <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+              {loading ? 'Creating account...' : 'Sign Up'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-400">Already have an account? <Link to="/login" className="text-gold hover:text-yellow-400">Sign in</Link></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

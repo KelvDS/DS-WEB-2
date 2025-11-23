@@ -1,0 +1,8 @@
+{
+  "name": "daperfect-studios",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "cd server && npm install && cd ../client && npm install"
+  }
+}
