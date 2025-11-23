@@ -232,4 +232,25 @@ if (dbType === 'postgres') {
   };
 }
 
+// --- Compatibility Wrappers for existing routes ---
+export const dbGet = async (sql, params = []) => {
+  const res = await query(sql, params);
+  return res.rows?.[0] || null;
+};
+
+export const dbAll = async (sql, params = []) => {
+  const res = await query(sql, params);
+  return res.rows || [];
+};
+
+export const dbRun = async (sql, params = []) => {
+  // For PostgreSQL, ensure RETURNING id is used to get lastID
+  const res = await query(sql, params);
+  return {
+    lastID: res.rows?.[0]?.id ?? null,
+    changes: res.rowCount ?? null
+  };
+};
+
 export { query, initDB };
+
