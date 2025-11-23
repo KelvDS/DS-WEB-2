@@ -3,16 +3,15 @@ dotenv.config();
 
 import bcrypt from 'bcrypt';
 
-// Decide which DB engine to use
 const dbType = process.env.DB_TYPE || 'sqlite';
+console.log(`🧠 Using database engine: ${dbType.toUpperCase()}`);
 
 let query;
 let initDB;
 
 if (dbType === 'postgres') {
   // ---------------- PostgreSQL Setup ----------------
-  import pkg from 'pg';
-  const { Pool } = pkg;
+  const { Pool } = (await import('pg')).default;
 
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -22,7 +21,6 @@ if (dbType === 'postgres') {
   query = (text, params = []) => pool.query(text, params);
 
   initDB = async () => {
-    // Users
     await query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -33,7 +31,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Galleries
     await query(`
       CREATE TABLE IF NOT EXISTS galleries (
         id SERIAL PRIMARY KEY,
@@ -43,7 +40,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Images
     await query(`
       CREATE TABLE IF NOT EXISTS images (
         id SERIAL PRIMARY KEY,
@@ -54,7 +50,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Gallery Requests
     await query(`
       CREATE TABLE IF NOT EXISTS gallery_requests (
         id SERIAL PRIMARY KEY,
@@ -64,7 +59,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Client Galleries
     await query(`
       CREATE TABLE IF NOT EXISTS client_galleries (
         client_id INTEGER NOT NULL REFERENCES users(id),
@@ -74,7 +68,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Favorites
     await query(`
       CREATE TABLE IF NOT EXISTS favorites (
         client_id INTEGER NOT NULL REFERENCES users(id),
@@ -84,7 +77,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Selections
     await query(`
       CREATE TABLE IF NOT EXISTS selections (
         client_id INTEGER NOT NULL REFERENCES users(id),
@@ -94,7 +86,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Highres Requests
     await query(`
       CREATE TABLE IF NOT EXISTS highres_requests (
         id SERIAL PRIMARY KEY,
@@ -105,7 +96,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Approved Downloads
     await query(`
       CREATE TABLE IF NOT EXISTS approved_downloads (
         id SERIAL PRIMARY KEY,
@@ -117,7 +107,6 @@ if (dbType === 'postgres') {
       );
     `);
 
-    // Seed Super Admin
     const result = await query('SELECT * FROM users WHERE email = $1', ['kelvrambo@gmail.com']);
     if (result.rows.length === 0) {
       const hash = bcrypt.hashSync('Kelv2580', 10);
@@ -131,7 +120,7 @@ if (dbType === 'postgres') {
 
 } else {
   // ---------------- SQLite Setup ----------------
-  import sqlite3 from 'sqlite3';
+  const sqlite3 = (await import('sqlite3')).default;
   import path from 'path';
   import { fileURLToPath } from 'url';
 
@@ -174,7 +163,61 @@ if (dbType === 'postgres') {
       FOREIGN KEY (gallery_id) REFERENCES galleries(id)
     )`);
 
-    // … repeat for other tables (same schema as above)
+    await query(`CREATE TABLE IF NOT EXISTS gallery_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES users(id)
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS client_galleries (
+      client_id INTEGER NOT NULL,
+      gallery_id INTEGER NOT NULL,
+      assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (client_id, gallery_id),
+      FOREIGN KEY (client_id) REFERENCES users(id),
+      FOREIGN KEY (gallery_id) REFERENCES galleries(id)
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS favorites (
+      client_id INTEGER NOT NULL,
+      image_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (client_id, image_id),
+      FOREIGN KEY (client_id) REFERENCES users(id),
+      FOREIGN KEY (image_id) REFERENCES images(id)
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS selections (
+      client_id INTEGER NOT NULL,
+      image_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (client_id, image_id),
+      FOREIGN KEY (client_id) REFERENCES users(id),
+      FOREIGN KEY (image_id) REFERENCES images(id)
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS highres_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      image_ids_json TEXT NOT NULL,
+      status TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','delivered')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (client_id) REFERENCES users(id)
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS approved_downloads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER NOT NULL,
+      image_id INTEGER NOT NULL,
+      request_id INTEGER NOT NULL,
+      approved_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(client_id, image_id),
+      FOREIGN KEY (client_id) REFERENCES users(id),
+      FOREIGN KEY (image_id) REFERENCES images(id),
+      FOREIGN KEY (request_id) REFERENCES highres_requests(id)
+    )`);
 
     const result = await query('SELECT * FROM users WHERE email = ?', ['kelvrambo@gmail.com']);
     if (result.rows.length === 0) {
