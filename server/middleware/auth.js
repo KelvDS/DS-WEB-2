@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { dbGet } from '../db.js';
+import { query } from '../db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'daperfect-secret-key-change-in-production';
 
@@ -10,7 +10,11 @@ export async function authenticateToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await dbGet('SELECT id, email, role FROM users WHERE id = ?', [decoded.userId]);
+
+    // PostgreSQL uses $1, SQLite wrapper still works with ?
+    const resDb = await query('SELECT id, email, role FROM users WHERE id = $1', [decoded.userId]);
+    const user = resDb.rows?.[0];
+
     if (!user) return res.status(401).json({ error: 'Invalid token' });
     req.user = user;
     next();
