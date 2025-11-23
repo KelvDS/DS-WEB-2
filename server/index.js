@@ -9,6 +9,24 @@ import authRoutes from './routes/auth.js';
 import adminRoutes from './routes/admin.js';
 import clientRoutes from './routes/client.js';
 import mediaRoutes from './routes/media.js';
+const app = express();
+
+// Needed for ES modules to resolve __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve React build
+app.use(express.static(path.join(__dirname, "../client/dist")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+});
+
+// Railway port binding
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 dotenv.config();
 
